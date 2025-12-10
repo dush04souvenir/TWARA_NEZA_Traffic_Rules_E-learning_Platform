@@ -137,44 +137,6 @@ graph TD
 ```
 
 
-
-## Entity Relationship Diagram (ERD)
-```mermaid
-erDiagram
-    User ||--o{ QuizResult : "takes"
-    User {
-        string id PK
-        string email
-        string role "LEARNER, MANAGER, ADMIN"
-    }
-`
-    Topic ||--|{ Question : "contains"
-    Topic {
-        string id PK
-        string title
-    }
-
-    Question ||--|{ Option : "has"
-    Question {
-        string id PK
-        string text
-        int points
-    }
-
-    Option {
-        string id PK
-        string text
-        boolean isCorrect
-    }
-
-    QuizResult {
-        string id PK
-        int score
-        int total
-        dateTime createdAt
-    }
-```
-
 ## Environment Setup
 1.  **Prerequisites:**
     *   Node.js (v18 or higher)
