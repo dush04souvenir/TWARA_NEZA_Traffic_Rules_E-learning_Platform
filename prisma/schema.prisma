@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  LEARNER
+  MANAGER
+  ADMIN
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  password       String
+  role           Role      @default(LEARNER)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  quizResults    QuizResult[]
+}
+
+model Topic {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  questions   Question[]
+}
+
+model Question {
+  id          String   @id @default(cuid())
+  topicId     String
+  text        String
+  image       String?
+  points      Int      @default(1)
+  
+  topic       Topic    @relation(fields: [topicId], references: [id])
+  options     Option[]
+}
+
+model Option {
+  id          String   @id @default(cuid())
+  questionId  String
+  text        String
+  isCorrect   Boolean  @default(false)
+  
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model QuizResult {
+  id          String   @id @default(cuid())
+  userId      String
+  score       Int
+  total       Int
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id])
+  details     Json?    // Stores detailed review data: [{ questionId, text, options, correctOptionId, userSelectedId }]
+}
+
+model TrafficSign {
+  id          String   @id @default(cuid())
+  name        String
+  imageUrl    String
+  description String
+  category    String
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  status    String   @default("unread") // unread, read, archived
+  createdAt DateTime @default(now())
+}
