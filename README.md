@@ -136,6 +136,80 @@ graph TD
     F --> F2[Global Settings]
 ```
 
+## Use Case Diagram
+
+```mermaid
+graph LR
+    User((User))
+    Admin((Admin))
+    Manager((Manager))
+    Learner((Learner))
+
+    User <|-- Admin
+    User <|-- Manager
+    User <|-- Learner
+
+    subgraph "System Capabilities"
+        Login[Login / Register]
+        TakeQuiz[Take Practice Quiz]
+        ViewProgress[View Progress]
+        ManageUsers[Manage Users]
+        CreateContent[Create Quiz Content]
+        ViewReports[View Reports]
+    end
+
+    Learner --> Login
+    Learner --> TakeQuiz
+    Learner --> ViewProgress
+    
+    Manager --> Login
+    Manager --> ManageUsers
+    Manager --> CreateContent
+    Manager --> ViewReports
+    
+    Admin --> Login
+    Admin --> ManageUsers
+    Admin --> CreateContent
+    Admin --> ViewReports
+```
+
+## Entity Relationship Diagram (ERD)
+```mermaid
+erDiagram
+    User ||--o{ QuizResult : "takes"
+    User {
+        string id PK
+        string email
+        string role "LEARNER, MANAGER, ADMIN"
+    }
+
+    Topic ||--|{ Question : "contains"
+    Topic {
+        string id PK
+        string title
+    }
+
+    Question ||--|{ Option : "has"
+    Question {
+        string id PK
+        string text
+        int points
+    }
+
+    Option {
+        string id PK
+        string text
+        boolean isCorrect
+    }
+
+    QuizResult {
+        string id PK
+        int score
+        int total
+        dateTime createdAt
+    }
+```
+
 ## Environment Setup
 1.  **Prerequisites:**
     *   Node.js (v18 or higher)
