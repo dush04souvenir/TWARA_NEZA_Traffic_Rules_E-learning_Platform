@@ -196,6 +196,22 @@ graph TD
 *   [ ] **AI Tutor:** integration for personalized question recommendations.
 
 ---
-**Screenshot Placeholder**
-*(Insert dashboard screenshot here for visual reference)*
-![Dashboard Screenshot](https://via.placeholder.com/1200x600?text=TWARA+NEZA+Dashboard+Preview)
+## System Screenshots
+
+### Manager & Admin Views
+| Manager Dashboard | Admin Overview |
+| :---: | :---: |
+| ![Manager Dashboard](assets/images/manager_dashboard.png) | ![Admin Dashboard](assets/images/admin_dashboard.png) |
+
+| Analytics Reports | Dark Mode Interface |
+| :---: | :---: |
+| ![Admin Analytics](assets/images/admin_analytics_page.png) | ![Dark Mode](assets/images/dashboard_dark_mode.png) |
+
+### Learner Experience
+| Learner Dashboard | Light Mode Interface |
+| :---: | :---: |
+| ![Learner Dashboard](assets/images/screencapture-localhost-3000-learner-dashboard-2025-12-10-21_11_07.png) | ![Light Mode](assets/images/dashboard_light_mode.png) |
+
+| Quiz Interface | Traffic Signs Library |
+| :---: | :---: |
+| ![Exam View](assets/images/exam_view.png) | ![Traffic Signs](assets/images/traffic_sign_view.png) |
