@@ -13,6 +13,8 @@ interface AdminDashboardProps {
 import { getRevenueStats } from "@/lib/actions/payment-actions"
 import { RevenueReport } from "@/components/revenue-report"
 
+export const dynamic = "force-dynamic"
+
 export default async function AdminDashboard(props: { searchParams: Promise<{ view?: string }> }) {
   const searchParams = await props.searchParams
   const view = searchParams.view || "overview"

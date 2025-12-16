@@ -10,6 +10,8 @@ import { getPendingPayments, getPendingPaymentCount, getRevenueStats } from "@/l
 import { PaymentApprovals } from "@/components/payment-approvals"
 import { RevenueReport } from "@/components/revenue-report"
 
+export const dynamic = "force-dynamic"
+
 export default async function ManagerDashboard(props: { searchParams: Promise<{ view?: string }> }) {
     const searchParams = await props.searchParams
     const view = searchParams.view || "overview"
