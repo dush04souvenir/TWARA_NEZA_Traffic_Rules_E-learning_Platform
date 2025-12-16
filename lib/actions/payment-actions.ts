@@ -3,7 +3,7 @@
 
 import { db as prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { isMock } from "@/lib/paymentMode";
+import { isMock } from "@/lib/payment-mode";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
