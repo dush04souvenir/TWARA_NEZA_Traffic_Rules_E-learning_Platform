@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button"
 import { getTrafficSigns } from "@/lib/actions/learner-actions"
 import { toast } from "sonner"
 import { LearnerLayout } from "@/components/learner-layout"
+import { Card } from "@/components/ui/card"
 
-import { OctagonAlert } from "lucide-react"
+import { OctagonAlert, Lock, Clock, RefreshCw, Loader2 } from "lucide-react"
 
 export default function FlashcardsPage() {
     const { data: session, status } = useSession()
@@ -19,6 +20,10 @@ export default function FlashcardsPage() {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [isFlipped, setIsFlipped] = useState(false)
 
+    // Payment State
+    const [paymentStatus, setPaymentStatus] = useState<'LOADING' | 'NONE' | 'PENDING' | 'APPROVED'>('LOADING')
+    const FLASHCARDS_ID = "flashcards_access"
+
     useEffect(() => {
         if (status === "loading") return
         if (!session) {
@@ -27,19 +32,72 @@ export default function FlashcardsPage() {
             return
         }
 
-        getTrafficSigns().then((data) => {
-            setSigns(data)
-            setLoading(false)
-            if (data.length === 0) {
-                // If no real data, use fallback for demo
-                setSigns([
-                    { id: '1', name: 'Stop Sign', description: 'Come to a complete stop.', imageUrl: '', category: 'Regulatory' },
-                    { id: '2', name: 'Yield', description: 'Slow down and let others pass.', imageUrl: '', category: 'Regulatory' },
-                    { id: '3', name: 'Speed Limit 50', description: 'Maximum speed is 50 km/h.', imageUrl: '', category: 'Regulatory' },
-                ])
+        const checkAccess = async () => {
+            // @ts-ignore
+            const userId = session.user.id
+            const { getPaymentStatus } = await import('@/lib/actions/payment-actions')
+
+            try {
+                const status = await getPaymentStatus({ learnerId: userId, topicId: FLASHCARDS_ID });
+                if (status === 'APPROVED') {
+                    setPaymentStatus('APPROVED')
+                    // Load content
+                    const data = await getTrafficSigns()
+                    setSigns(data)
+                    if (data.length === 0) {
+                        setSigns([
+                            { id: '1', name: 'Stop Sign', description: 'Come to a complete stop.', imageUrl: '', category: 'Regulatory' },
+                            { id: '2', name: 'Yield', description: 'Slow down and let others pass.', imageUrl: '', category: 'Regulatory' },
+                        ])
+                    }
+                    setLoading(false)
+                } else if (status === 'PENDING') {
+                    setPaymentStatus('PENDING')
+                    setLoading(false)
+                } else {
+                    setPaymentStatus('NONE')
+                    setLoading(false)
+                }
+            } catch (e) {
+                console.error(e)
+                setPaymentStatus('NONE')
+                setLoading(false)
             }
-        })
+        }
+        checkAccess()
     }, [session, status, router])
+
+    const handleUnlock = async () => {
+        if (!session?.user) return
+
+        // @ts-ignore
+        const userId = session.user.id
+        const { createPayment } = await import('@/lib/actions/payment-actions')
+
+        if (!confirm("Unlock Flashcards for 500 RWF?")) return;
+
+        try {
+            const payment = await createPayment({
+                learnerId: userId,
+                topicId: FLASHCARDS_ID,
+                amountCents: 500, // 500 RWF
+                autoApprove: false
+            })
+
+            if (payment.status === 'APPROVED') {
+                toast.success("Flashcards unlocked!")
+                setPaymentStatus('APPROVED')
+                const data = await getTrafficSigns()
+                setSigns(data)
+            } else {
+                setPaymentStatus('PENDING')
+                toast.info("Payment created. Waiting for approval.")
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error("Failed to create payment")
+        }
+    }
 
     const handleNext = () => {
         setIsFlipped(false)
@@ -55,9 +113,57 @@ export default function FlashcardsPage() {
         }, 300)
     }
 
-    if (loading) return <div className="flex h-screen items-center justify-center">Loading flashcards...</div>
+    if (loading || status === "loading" || paymentStatus === 'LOADING') {
+        return <div className="flex h-screen items-center justify-center gap-2"><Loader2 className="animate-spin" /> Checkin access...</div>
+    }
 
-    const currentSign = signs[currentIndex]
+    if (paymentStatus === 'PENDING') {
+        return (
+            <LearnerLayout>
+                <div className="min-h-[60vh] flex items-center justify-center p-4">
+                    <Card className="max-w-md w-full text-center p-8">
+                        <div className="mx-auto w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-6">
+                            <Clock className="w-8 h-8 text-yellow-600" />
+                        </div>
+                        <h2 className="text-2xl font-bold mb-2">Payment Pending</h2>
+                        <p className="text-muted-foreground mb-6">
+                            Your payment of 500 RWF for Flashcards is awaiting approval.
+                        </p>
+                        <Button variant="outline" onClick={() => window.location.reload()}>
+                            <RefreshCw className="w-4 h-4 mr-2" /> Check Status
+                        </Button>
+                    </Card>
+                </div>
+            </LearnerLayout>
+        )
+    }
+
+    if (paymentStatus === 'NONE') {
+        return (
+            <LearnerLayout>
+                <div className="min-h-[60vh] flex items-center justify-center p-4">
+                    <Card className="max-w-md w-full text-center p-8 bg-card shadow-xl border">
+                        <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                            <Lock className="w-10 h-10 text-primary" />
+                        </div>
+                        <h2 className="text-3xl font-bold mb-2">Unlock Flashcards</h2>
+                        <p className="text-muted-foreground mb-6 text-lg">
+                            Master traffic signs with our interactive flashcards mode.
+                        </p>
+                        <div className="bg-muted p-4 rounded-lg mb-6">
+                            <span className="text-2xl font-bold">500 RWF</span>
+                            <span className="text-sm text-muted-foreground block">One-time payment</span>
+                        </div>
+                        <Button className="w-full text-lg h-12" onClick={handleUnlock}>
+                            Unlock Now
+                        </Button>
+                    </Card>
+                </div>
+            </LearnerLayout>
+        )
+    }
+
+    const currentSign = signs[currentIndex] || { name: 'Loading', category: '' }
 
     return (
         <LearnerLayout>

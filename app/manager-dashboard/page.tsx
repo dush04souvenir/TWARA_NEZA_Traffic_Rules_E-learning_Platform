@@ -6,13 +6,18 @@ import { ManagerStudentList } from "@/components/manager-student-list"
 import { DownloadReportButton } from "@/components/download-report-button"
 import { ExportDataButtons } from "@/components/export-data-buttons"
 import { ManagerQuickActions } from "@/components/manager-quick-actions"
+import { getPendingPayments, getPendingPaymentCount, getRevenueStats } from "@/lib/actions/payment-actions"
+import { PaymentApprovals } from "@/components/payment-approvals"
+import { RevenueReport } from "@/components/revenue-report"
 
 export default async function ManagerDashboard(props: { searchParams: Promise<{ view?: string }> }) {
     const searchParams = await props.searchParams
     const view = searchParams.view || "overview"
+    const pendingCount = await getPendingPaymentCount()
+    const revenueStats = await getRevenueStats()
 
     return (
-        <ManagerLayout>
+        <ManagerLayout pendingCount={pendingCount}>
             <header className="mb-8">
                 <h1 className="text-3xl font-bold tracking-tight text-foreground capitalize">
                     {view}
@@ -22,12 +27,13 @@ export default async function ManagerDashboard(props: { searchParams: Promise<{ 
                     {view === "students" && "Track, manage, and support your students."}
                     {view === "inbox" && "Messages and inquiries from the platform."}
                     {view === "reports" && "Detailed performance reports and exports."}
+                    {view === "approvals" && "Manage pending payment approvals."}
                 </p>
             </header>
 
             {view === "overview" && (
                 <div className="space-y-8">
-                    <ManagerStats />
+                    <ManagerStats totalRevenue={revenueStats.totalRevenue} />
                     <ManagerAnalytics />
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Can add recent activity or simple lists here */}
@@ -63,13 +69,18 @@ export default async function ManagerDashboard(props: { searchParams: Promise<{ 
                 <div id="report-content" className="space-y-6">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h2 className="text-xl font-semibold">Performance Reports</h2>
-                            <p className="text-muted-foreground">Detailed insights into student progression and engagement.</p>
+                            <h2 className="text-xl font-semibold">Performance & Revenue Reports</h2>
+                            <p className="text-muted-foreground">Detailed insights into student progression and financial performance.</p>
                         </div>
                         <DownloadReportButton />
                     </div>
 
+                    <div className="grid gap-6">
+                        <RevenueReport transactions={revenueStats.recentTransactions} />
+                    </div>
+
                     <div className="p-6 border rounded-xl bg-card">
+                        <h3 className="font-semibold mb-4 text-lg">Detailed Analytics</h3>
                         <ManagerAnalytics />
                     </div>
 
@@ -80,6 +91,16 @@ export default async function ManagerDashboard(props: { searchParams: Promise<{ 
                             <ExportDataButtons />
                         </div>
                     </div>
+                </div>
+            )}
+
+            {view === "approvals" && (
+                <div className="space-y-6">
+                    <div>
+                        <h2 className="text-xl font-semibold">Pending Approvals</h2>
+                        <p className="text-muted-foreground">Review and approve pending student payments.</p>
+                    </div>
+                    <PaymentApprovals initialPayments={await getPendingPayments()} />
                 </div>
             )}
 

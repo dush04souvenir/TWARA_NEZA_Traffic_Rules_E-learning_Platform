@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card"
 import { generatePracticeExam, submitExam } from "@/lib/actions/learner-actions"
 import { toast } from "sonner"
-import { Loader2, CheckCircle, XCircle, Timer, AlertTriangle, Info, Check, X } from "lucide-react"
+import { Loader2, CheckCircle, XCircle, Timer, AlertTriangle, Info, Check, X, Lock, RefreshCw, Clock } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -32,14 +32,71 @@ export default function ExamPage() {
     const [timeLeft, setTimeLeft] = useState(20 * 60)
     const timerRef = useRef<NodeJS.Timeout | null>(null)
 
+    // Payment State
+    const [paymentStatus, setPaymentStatus] = useState<'LOADING' | 'NONE' | 'PENDING' | 'APPROVED'>('LOADING')
+    const [pendingPaymentId, setPendingPaymentId] = useState<string | null>(null)
+    const PRACTICE_EXAM_ID = "comprehensive_practice_exam"
+
     useEffect(() => {
-        if (session?.user) {
-            generatePracticeExam().then(data => {
-                setQuestions(data)
-                setLoading(false)
-            })
+        const checkExamAccess = async () => {
+            if (session?.user) {
+                // @ts-ignore
+                const userId = session.user.id
+                const { getPaymentStatus } = await import('@/lib/actions/payment-actions')
+
+                const status = await getPaymentStatus({ learnerId: userId, topicId: PRACTICE_EXAM_ID });
+                if (status === 'APPROVED') {
+                    setPaymentStatus('APPROVED')
+                    // Load exam content
+                    generatePracticeExam().then(data => {
+                        setQuestions(data)
+                        setLoading(false)
+                    })
+                } else if (status === 'PENDING') {
+                    // We need to fetch the payment ID to show it? getPaymentStatus returns status string only.
+                    // For now just show pending state.
+                    setPaymentStatus('PENDING')
+                    setLoading(false)
+                } else {
+                    setPaymentStatus('NONE')
+                    setLoading(false)
+                }
+            }
         }
+        checkExamAccess()
     }, [session])
+
+    const handleUnlockExam = async () => {
+        if (!session?.user) return
+
+        // @ts-ignore
+        const userId = session.user.id
+        const { createPayment } = await import('@/lib/actions/payment-actions')
+
+        try {
+            const payment = await createPayment({
+                learnerId: userId,
+                topicId: PRACTICE_EXAM_ID,
+                amountCents: 1000,
+                autoApprove: false
+            })
+
+            if (payment.status === 'APPROVED') {
+                toast.success("Exam unlocked!")
+                setPaymentStatus('APPROVED')
+                // Load content
+                const data = await generatePracticeExam()
+                setQuestions(data)
+            } else {
+                setPaymentStatus('PENDING')
+                setPendingPaymentId(payment.id)
+                toast.info("Payment created. Waiting for approval.")
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error("Failed to create payment")
+        }
+    }
 
     useEffect(() => {
         if (examStarted && !result && timeLeft > 0) {
@@ -112,7 +169,69 @@ export default function ExamPage() {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-4">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <p>Preparing your exam environment...</p>
+                <p>Checking exam access...</p>
+            </div>
+        )
+    }
+
+    if (paymentStatus === 'PENDING') {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4 bg-muted/20">
+                <Card className="max-w-md w-full text-center p-8">
+                    <div className="mx-auto w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-6">
+                        <Clock className="w-8 h-8 text-yellow-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold mb-2">Exam Payment Pending</h2>
+                    <p className="text-muted-foreground mb-6">
+                        Your payment of <span className="font-bold text-foreground">1000 RWF</span> is awaiting approval.
+                        Please ask an instructor to approve it.
+                    </p>
+                    <div className="flex justify-center gap-2">
+                        <Button variant="outline" onClick={() => router.push("/learner-dashboard")}>Dashboard</Button>
+                        <Button onClick={() => window.location.reload()}>
+                            <RefreshCw className="w-4 h-4 mr-2" /> Check Status
+                        </Button>
+                    </div>
+                </Card>
+            </div>
+        )
+    }
+
+    if (paymentStatus === 'NONE') {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4 bg-muted/20">
+                <Card className="max-w-lg w-full text-center">
+                    <CardHeader>
+                        <div className="w-20 h-20 bg-primary/10 rounded-full mx-auto flex items-center justify-center mb-4">
+                            <Lock className="w-10 h-10 text-primary" />
+                        </div>
+                        <CardTitle className="text-3xl">Practice Exam</CardTitle>
+                        <CardDescription className="text-lg mt-2">
+                            Comprehensive mock exam simulating the real test environment.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="bg-muted p-4 rounded-lg text-left space-y-2">
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Price</span>
+                                <span className="font-bold">1000 RWF</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Questions</span>
+                                <span className="font-bold">20 Random Questions</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Time Limit</span>
+                                <span className="font-bold">20 Minutes</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button className="w-full text-lg h-12" onClick={handleUnlockExam}>
+                            Unlock Now
+                        </Button>
+                    </CardFooter>
+                </Card>
             </div>
         )
     }

@@ -1,11 +1,11 @@
 "use client"
 
 import { Button } from "./ui/button"
-import { LayoutDashboard, Users, Mail, PieChart, Settings, LogOut } from "lucide-react"
+import { LayoutDashboard, Users, Mail, PieChart, Settings, LogOut, CheckCircle } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { signOut } from "next-auth/react"
 
-export function ManagerNav() {
+export function ManagerNav({ pendingCount = 0 }: { pendingCount?: number }) {
     const router = useRouter()
     const searchParams = useSearchParams()
     // Use state or props if controlled by parent, but for sidebar pattern query params are good
@@ -13,6 +13,7 @@ export function ManagerNav() {
 
     const navItems = [
         { label: "Overview", id: "overview", icon: <LayoutDashboard className="w-5 h-5" /> },
+        { label: "Approvals", id: "approvals", icon: <CheckCircle className="w-5 h-5" /> },
         { label: "Students", id: "students", icon: <Users className="w-5 h-5" /> },
         { label: "Inbox", id: "inbox", icon: <Mail className="w-5 h-5" /> },
         { label: "Reports", id: "reports", icon: <PieChart className="w-5 h-5" /> },
@@ -37,13 +38,18 @@ export function ManagerNav() {
                         <button
                             key={item.id}
                             onClick={() => handleNav(item.id)}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all text-left ${currentView === item.id
-                                    ? "bg-primary text-primary-foreground shadow-md"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            className={`relative w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all text-left ${currentView === item.id
+                                ? "bg-primary text-primary-foreground shadow-md"
+                                : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                 }`}
                         >
                             {item.icon}
-                            {item.label}
+                            <span className="flex-1">{item.label}</span>
+                            {item.id === "approvals" && pendingCount > 0 && (
+                                <span className={`flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ${currentView === item.id ? 'bg-white text-primary' : ''}`}>
+                                    {pendingCount}
+                                </span>
+                            )}
                         </button>
                     ))}
                 </div>

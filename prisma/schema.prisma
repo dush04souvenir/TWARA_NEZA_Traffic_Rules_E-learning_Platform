@@ -23,6 +23,7 @@ model User {
   updatedAt      DateTime  @updatedAt
   
   quizResults    QuizResult[]
+  payments       Payment[]
 }
 
 model Topic {
@@ -62,6 +63,24 @@ model QuizResult {
   user        User     @relation(fields: [userId], references: [id])
   details     Json?    // Stores detailed review data: [{ questionId, text, options, correctOptionId, userSelectedId }]
 }
+
+model Payment {
+  id               String   @id @default(cuid())
+  learnerId        String
+  examId           String
+  amountCents      Int
+  currency         String   @default("USD")
+  stripeSessionId  String?
+  status           String   @default("PENDING") // PENDING, APPROVED, REJECTED, REFUNDED
+  managerId        String?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  learner          User     @relation(fields: [learnerId], references: [id])
+  // No direct relation to Exam; examId references Topic.id (exam topic)
+}
+
 
 model TrafficSign {
   id          String   @id @default(cuid())

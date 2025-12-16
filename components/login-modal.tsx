@@ -30,17 +30,21 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     e.preventDefault()
     setLoading(true)
 
+    // Basic sanitization
+    const trimmedEmail = email.trim()
+
     try {
       if (isLogin) {
         // Handle Login
         const result = await signIn("credentials", {
-          email,
+          email: trimmedEmail,
           password,
           redirect: false,
         })
 
         if (result?.error) {
           toast.error("Invalid credentials")
+          setPassword("") // Clear sensitive input on failure
         } else {
           toast.success("Logged in successfully")
           onClose()
@@ -61,17 +65,20 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         }
       } else {
         // Handle Registration
-        const result = await registerUser({ name, email, password })
+        const result = await registerUser({ name, email: trimmedEmail, password })
 
         if (result.error) {
           toast.error(result.error)
+          setPassword("") // Clear password on error
         } else {
           toast.success("Account created! Please login.")
           setIsLogin(true) // Switch to login view
+          setPassword("") // Clear password to force re-entry
         }
       }
     } catch (error) {
       toast.error("Something went wrong")
+      setPassword("")
     } finally {
       setLoading(false)
     }

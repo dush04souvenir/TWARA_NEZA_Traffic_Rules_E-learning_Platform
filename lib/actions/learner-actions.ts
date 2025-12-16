@@ -2,23 +2,94 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-export async function getTopics() {
+export async function getTopics(userId?: string) {
     try {
-        return await db.topic.findMany({
+        // Security check: Ensure requesting user matches logged in session
+        if (userId) {
+            const session = await getServerSession(authOptions);
+            if (!session || session.user.id !== userId) {
+                console.warn(`Unauthorized access attempt to topics for user ${userId}`);
+                return []; // Fail silently or throw
+            }
+        }
+
+        const topics = await db.topic.findMany({
             include: {
                 _count: {
                     select: { questions: true },
                 },
             },
         });
+
+        if (!userId) {
+            return topics.map((t, index) => ({
+                ...t,
+                paymentStatus: index === 0 ? 'APPROVED' : 'NONE',
+                isFree: index === 0
+            }));
+        }
+
+        // Fetch payments for this user
+        const payments = await db.payment.findMany({
+            where: {
+                learnerId: userId,
+                examId: { in: topics.map(t => t.id) }
+            }
+        });
+
+        return topics.map((topic, index) => {
+            if (index === 0) {
+                return { ...topic, paymentStatus: 'APPROVED', isFree: true };
+            }
+
+            const payment = payments.find(p => p.examId === topic.id);
+            // If payment exists, use its status (e.g. APPROVED or PENDING)
+            // If no payment, status is NONE
+            return {
+                ...topic,
+                paymentStatus: payment ? payment.status : 'NONE',
+                isFree: false
+            };
+        });
+
     } catch (error) {
+        console.error(error);
         return [];
     }
 }
 
 export async function getQuizForTopic(topicId: string) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session) return [];
+
+        const userId = (session.user as any).id;
+
+        // Determine if authorized (Free topic or Paid)
+        // 1. Check if it's the free topic (first one)
+        // Note: Sort order must match getTopics to be consistent. 
+        // We assume default order here as used in getTopics.
+        const allTopics = await db.topic.findMany({ select: { id: true } });
+        const isFree = allTopics.length > 0 && allTopics[0].id === topicId;
+
+        if (!isFree) {
+            // 2. Check payment
+            const payment = await db.payment.findFirst({
+                where: {
+                    learnerId: userId,
+                    examId: topicId,
+                    status: "APPROVED"
+                }
+            });
+            if (!payment) {
+                // Not authorized
+                return [];
+            }
+        }
+
         const questions = await db.question.findMany({
             where: { topicId },
             include: {
@@ -35,6 +106,11 @@ export async function getQuizForTopic(topicId: string) {
 
 export async function submitQuiz(userId: string, topicId: string, answers: Record<string, string>) {
     // answers: { questionId: optionId }
+
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.id !== userId) {
+        return { error: "Unauthorized" };
+    }
 
     try {
         const questions = await db.question.findMany({
@@ -97,6 +173,11 @@ export async function submitQuiz(userId: string, topicId: string, answers: Recor
 }
 
 export async function getUserProgress(userId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any).id !== userId) {
+        return [];
+    }
+
     try {
         return await db.quizResult.findMany({
             where: { userId },
@@ -110,6 +191,10 @@ export async function getUserProgress(userId: string) {
 }
 
 export async function getLearnerStats(userId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any).id !== userId) {
+        return { quizzesCompleted: 0, avgScore: 0, streak: 0 };
+    }
     try {
         const results = await db.quizResult.findMany({
             where: { userId }
@@ -140,6 +225,10 @@ export async function getTrafficSigns() {
 }
 
 export async function getUserDetailedStats(userId: string) {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any).id !== userId) {
+        return [];
+    }
     try {
         const results = await db.quizResult.findMany({
             where: { userId },
@@ -179,6 +268,10 @@ export async function generatePracticeExam() {
 }
 
 export async function submitExam(userId: string, answers: Record<string, string>) {
+    const session = await getServerSession(authOptions);
+    if (!session || (session.user as any).id !== userId) {
+        return { error: "Unauthorized" };
+    }
     try {
         const questionIds = Object.keys(answers);
         const questions = await db.question.findMany({

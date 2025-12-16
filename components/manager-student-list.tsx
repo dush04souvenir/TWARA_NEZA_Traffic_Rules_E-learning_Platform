@@ -7,12 +7,21 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Mail, Phone, MapPin, Calendar, BookOpen, AlertCircle } from "lucide-react"
+import { Mail, Phone, MapPin, Calendar, BookOpen, AlertCircle, Loader2 } from "lucide-react"
+import { sendManagerEmail } from "@/lib/actions/manager-actions"
+import { toast } from "sonner"
 
 export function ManagerStudentList() {
     const [students, setStudents] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedStudent, setSelectedStudent] = useState<any | null>(null)
+    const [searchQuery, setSearchQuery] = useState("")
+
+    // Email State
+    const [studentToEmail, setStudentToEmail] = useState<any | null>(null)
+    const [emailSubject, setEmailSubject] = useState("")
+    const [emailBody, setEmailBody] = useState("")
+    const [isSending, setIsSending] = useState(false)
 
     useEffect(() => {
         async function fetchStudents() {
@@ -46,7 +55,25 @@ export function ManagerStudentList() {
         fetchStudents()
     }, [])
 
-    const [searchQuery, setSearchQuery] = useState("")
+    const handleSendEmail = async () => {
+        if (!emailSubject || !emailBody || !studentToEmail) {
+            toast.error("Please fill in all fields")
+            return
+        }
+
+        setIsSending(true)
+        try {
+            await sendManagerEmail(studentToEmail.email, emailSubject, emailBody)
+            toast.success("Email sent successfully")
+            setStudentToEmail(null)
+            setEmailSubject("")
+            setEmailBody("")
+        } catch (error) {
+            toast.error("Failed to send email")
+        } finally {
+            setIsSending(false)
+        }
+    }
 
     const filteredStudents = students.filter(student =>
         student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -123,7 +150,8 @@ export function ManagerStudentList() {
                 </TableBody>
             </Table>
 
-            <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && setSelectedStudent(null)}>
+            {/* Student Details Dialog */}
+            <Dialog open={!!selectedStudent && !studentToEmail} onOpenChange={(open) => !open && setSelectedStudent(null)}>
                 <DialogContent className="max-w-md">
                     {selectedStudent && (
                         <>
@@ -201,14 +229,51 @@ export function ManagerStudentList() {
 
                             <DialogFooter className="gap-2 sm:gap-0">
                                 <Button variant="outline" onClick={() => setSelectedStudent(null)}>Close</Button>
-                                <Button asChild>
-                                    <a href={`mailto:${selectedStudent.email}?subject=Course Progress Update&body=Hi ${selectedStudent.name},`}>
-                                        Contact Student
-                                    </a>
+                                <Button onClick={() => setStudentToEmail(selectedStudent)}>
+                                    Contact Student
                                 </Button>
                             </DialogFooter>
                         </>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Email Dialog */}
+            <Dialog open={!!studentToEmail} onOpenChange={(open) => !open && setStudentToEmail(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Send Email</DialogTitle>
+                        <DialogDescription>
+                            To: {studentToEmail?.name} ({studentToEmail?.email})
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Subject</label>
+                            <input
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={emailSubject}
+                                onChange={(e) => setEmailSubject(e.target.value)}
+                                placeholder="e.g. Course Reminder"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Message</label>
+                            <textarea
+                                className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={emailBody}
+                                onChange={(e) => setEmailBody(e.target.value)}
+                                placeholder="Type your message here..."
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setStudentToEmail(null)}>Cancel</Button>
+                        <Button onClick={handleSendEmail} disabled={isSending}>
+                            {isSending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Send Email
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

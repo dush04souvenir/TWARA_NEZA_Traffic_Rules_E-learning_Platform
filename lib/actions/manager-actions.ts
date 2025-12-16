@@ -4,6 +4,8 @@ import { db } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 
 const StudentSchema = z.object({
     name: z.string().min(2, "Name is required"),
@@ -17,6 +19,10 @@ const QuizSchema = z.object({
 })
 
 export async function addStudent(data: z.infer<typeof StudentSchema>) {
+    const session = await getServerSession(authOptions);
+    const role = (session?.user as any)?.role;
+    if (role !== "MANAGER" && role !== "ADMIN") return { error: "Unauthorized" };
+
     const validated = StudentSchema.safeParse(data)
     if (!validated.success) return { error: "Invalid data" }
 
@@ -46,6 +52,10 @@ export async function addStudent(data: z.infer<typeof StudentSchema>) {
 }
 
 export async function createQuiz(data: z.infer<typeof QuizSchema>) {
+    const session = await getServerSession(authOptions);
+    const role = (session?.user as any)?.role;
+    if (role !== "MANAGER" && role !== "ADMIN") return { error: "Unauthorized" };
+
     const validated = QuizSchema.safeParse(data)
     if (!validated.success) return { error: "Invalid data" }
 
@@ -68,6 +78,10 @@ export async function createQuiz(data: z.infer<typeof QuizSchema>) {
 
 export async function getStudents() {
     try {
+        const session = await getServerSession(authOptions);
+        const role = (session?.user as any)?.role;
+        if (role !== "MANAGER" && role !== "ADMIN") return { error: "Unauthorized" };
+
         const students = await db.user.findMany({
             where: { role: "LEARNER" },
             orderBy: { createdAt: "desc" },
@@ -81,5 +95,28 @@ export async function getStudents() {
         return { students }
     } catch (error) {
         return { error: "Failed to fetch students" }
+    }
+}
+
+export async function sendManagerEmail(studentEmail: string, subject: string, message: string) {
+    try {
+        const session = await getServerSession(authOptions);
+        const role = (session?.user as any)?.role;
+        if (role !== "MANAGER" && role !== "ADMIN") return { error: "Unauthorized" };
+
+        const { sendEmail } = await import("@/lib/email");
+        await sendEmail({
+            to: studentEmail,
+            subject: subject,
+            html: `<p>You have received a message from your manager:</p>
+                    <blockquote style="border-left: 4px solid #ccc; padding-left: 10px; color: #555;">
+                        ${message.replace(/\n/g, "<br>")}
+                    </blockquote>
+                    <p>Regards,<br>Twara Neza Team</p>`
+        });
+        return { success: "Email sent successfully" };
+    } catch (error) {
+        console.error("Failed to send manager email:", error);
+        return { error: "Failed to send email" };
     }
 }
