@@ -170,5 +170,5 @@ For support, please contact the development team or open an issue in the reposit
 ---
 
 <p align="center">
-  Built with ❤️ by the Twara Neza Engineer Team
+  Built by Providence Souvenir DUSHIME
 </p>
