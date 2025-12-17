@@ -13,42 +13,72 @@
 ## 📋 Overview
 **Twara Neza** is a modern, comprehensive web platform designed to digitize and optimize the driver education process. It provides a seamless experience for driving schools to manage students, track progress, and deliver high-quality educational content.
 
+It serves as a centralized hub for learners to access educational content, take quizzes, and track their progress, while empowering managers and administrators with tools to oversee student performance, manage content, and handle administrative tasks efficiently.
+
 > "Skip the Line, Save Your Time - Master the Road Rules with Twara Neza."
 
-![Dashboard Preview](./assets/images/dashboard_light_mode.png)
+![Dashboard Preview](./assets/images/landing_page_light_mode.png)
 
 ---
 
 ## 🔥 Key Features
 
-### 🧩 Core Components
-- **Unified Dashboard**: Centralized hub for Admins, Managers, and Learners.
-- **Secure Authentication**: Role-based access control (RBAC) using NextAuth.js.
-- **Real-time Analytics**: Visual data tracking for student performance and revenue.
-- **Content Management**: Easy tools to create and manage quizzes and lessons.
+### 🏢 For Managers
+- **Dashboard Overview**: Real-time statistics on active students, pass rates, and revenue.
+- **Student Management**: 
+    - Register new learners with custom or generated accounts.
+    - View detailed progress profiles and activity history.
+    - Direct communication integration.
+- **Quiz Management**: Create and organize quiz topics and question banks.
+- **Reporting**: Generate PDF summaries and export student data to CSV/Excel.
 
-### 👥 Key Users
-- **Learners**: Access interactive quizzes, flashcards, and track personal progress.
-- **Managers**: oversee enrollments, monitor student success rates, and generate reports.
-- **Administrators**: Configure system settings and manage global user access.
+### 🎓 For Learners
+- **Interactive Quizzes**: Practice exams with instant feedback and scoring.
+- **Process Tracking**: detailed visual analytics of strong and weak areas.
+- **Resource Library**: Access to comprehensive lists of traffic signs and rules.
+- **AI Focus Areas**: Smart recommendations based on recent mistakes.
 
-### 🚀 Technical Success
-- **Server Actions**: Secure, API-free backend mutations.
-- **Type Safety**: Full end-to-end type safety with TypeScript and Prisma.
-- **Modern UI**: Beautiful, responsive interface built with Tailwind CSS and Shadcn UI.
+### ⚙️ For Administrators
+- **System Configuration**: Manage global settings and platform parameters.
+- **User Management**: Oversee all manager and learner accounts.
+- **Revenue Tracking**: Monitor platform-wide financial performance.
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Area | Technology |
-| :--- | :--- |
-| **Frontend** | [Next.js 15](https://nextjs.org/) (App Router), React Server Components |
-| **Styling** | [Tailwind CSS 4](https://tailwindcss.com/), [Shadcn UI](https://ui.shadcn.com/) |
-| **Language** | [TypeScript](https://www.typescriptlang.org/) |
-| **Database** | MySQL, [Prisma ORM](https://www.prisma.io/) |
-| **Auth** | [NextAuth.js](https://next-auth.js.org/) |
-| **Tools** | Zod (Validation), Recharts (Analytics), Lucide (Icons) |
+| Area | Technology | Usage |
+| :--- | :--- | :--- |
+| **Frontend** | [Next.js 15](https://nextjs.org/) | App Router, Server Components |
+| **Styling** | [Tailwind CSS 4](https://tailwindcss.com/) | Responsive design |
+| **Components** | [Shadcn UI](https://ui.shadcn.com/) | Accessible UI primitives |
+| **Language** | [TypeScript](https://www.typescriptlang.org/) | End-to-end type safety |
+| **Database** | MySQL | Relational data storage |
+| **ORM** | [Prisma](https://www.prisma.io/) | Database access and schema management |
+| **Auth** | [NextAuth.js](https://next-auth.js.org/) | Role-based authentication (RBAC) |
+| **Utilities** | Zod, Recharts, Lucide | Validation, Charts, Icons |
+
+---
+
+## 📸 System Interface
+
+### Management & Administration
+| Manager Dashboard | Admin Analytics |
+| :---: | :---: |
+| ![Manager Dashboard](./assets/images/manager_dashboard.png) | ![Admin Analytics](./assets/images/admin_analytics_page.png) |
+| *Track student progress and enrollments* | *Platform-wide performance monitoring* |
+
+### Learner Experience
+| Learner Dashboard | Quiz Interface |
+| :---: | :---: |
+| ![Learner Dashboard](./assets/images/screencapture-localhost-3000-learner-dashboard-2025-12-10-21_11_07.png) | ![Exam View](./assets/images/exam_view.png) |
+| *Personalized learning hub* | *Interactive testing environment* |
+
+### Platform Views
+| Traffic Signs | Dark Mode Support |
+| :---: | :---: |
+| ![Traffic Signs](./assets/images/traffic_sign_view.png) | ![Dark Mode](./assets/images/dashboard_dark_mode.png) |
+| *Educational resources library* | *Comfortable viewing at night* |
 
 ---
 
@@ -56,9 +86,9 @@
 
 ### Prerequisites
 - Node.js (v18+)
-- MySQL Database
+- MySQL Database instance
 
-### Installation
+### Installation Steps
 
 1.  **Clone the repository**
     ```bash
@@ -82,6 +112,8 @@
 4.  **Setup Database**
     ```bash
     npx prisma db push
+    # Optional: Seed initial data
+    # node prisma/seed.js
     ```
 
 5.  **Run Development Server**
@@ -98,7 +130,9 @@ TWARA_NEZA_PLATFORM/
 ├── 📁 app/                 # Next.js App Router (Routes & Layouts)
 │   ├── (auth)/             # Authentication routes
 │   ├── dashboard/          # Shared dashboard views
-│   └── api/                # API Endpoints (if needed)
+│   ├── manager-dashboard/  # Manager specific views
+│   ├── learner-dashboard/  # Learner specific views
+│   └── api/                # API Endpoints
 ├── 📁 components/          # Reusable UI Components
 │   ├── ui/                 # Atomic Design Elements (Buttons, Inputs)
 │   └── ...                 # Feature-specific components
@@ -114,23 +148,18 @@ TWARA_NEZA_PLATFORM/
 ## 🔄 Workflow
 
 ```mermaid
-graph LR
-    A[Learner] -->|Registers| B(Platform)
-    B -->|Takes Quiz| C{Database}
-    C -->|Stores Result| D[Manager Dashboard]
-    D -->|Reviews Progress| A
+graph TD
+    A[Landing Page] --> B{Login}
+    B -- Manager --> C[Manager Dashboard]
+    B -- Learner --> D[Learner Dashboard]
+    
+    C --> C1[Add Student]
+    C --> C2[View Reports]
+    
+    D --> D1[Take Quiz]
+    D --> D2[Review Progress]
+    D --> D3[AI Focus Areas]
 ```
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these steps:
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
 
 ---
 
