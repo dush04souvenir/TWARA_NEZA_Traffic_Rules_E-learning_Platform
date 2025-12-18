@@ -60,6 +60,27 @@ It serves as a centralized hub for learners to access educational content, take 
 
 ---
 
+## 🧪 Testing
+
+We ensure robustness and reliability through a comprehensive automated testing suite.
+
+| Type | Library | Purpose |
+| :--- | :--- | :--- |
+| **Unit Testing** | [Jest](https://jestjs.io/) | Testing utility logic and server actions |
+| **Component Testing** | [React Testing Library](https://testing-library.com/) | Verifying UI component rendering and interactions |
+| **Environment** | `jsdom` | Simulating browser behavior for React components |
+
+### Running Tests
+Execute the entire test suite with:
+
+```bash
+npm test
+```
+
+*See `testing_implementation.md` for detailed architecture and configuration explanation.*
+
+---
+
 ## 📸 System Interface
 
 ### Management & Administration
