@@ -10,7 +10,7 @@ export async function getTopics(userId?: string) {
         // Security check: Ensure requesting user matches logged in session
         if (userId) {
             const session = await getServerSession(authOptions);
-            if (!session || session.user.id !== userId) {
+            if (!session || (session.user as any).id !== userId) {
                 console.warn(`Unauthorized access attempt to topics for user ${userId}`);
                 return []; // Fail silently or throw
             }
@@ -108,7 +108,7 @@ export async function submitQuiz(userId: string, topicId: string, answers: Recor
     // answers: { questionId: optionId }
 
     const session = await getServerSession(authOptions);
-    if (!session || session.user.id !== userId) {
+    if (!session || (session.user as any).id !== userId) {
         return { error: "Unauthorized" };
     }
 
@@ -359,14 +359,18 @@ export async function getFocusAreas(userId: string) {
         // Fetch actual question data
         const questions = await db.question.findMany({
             where: { id: { in: Array.from(incorrectQuestionIds).slice(0, 3) } }, // Limit to 3
-            include: { topic: true }
+            include: {
+                topic: true,
+                options: { where: { isCorrect: true }, take: 1 }
+            }
         });
 
         return questions.map(q => ({
             id: q.id,
             text: q.text,
             topic: q.topic.title,
-            topicId: q.topic.id
+            topicId: q.topic.id,
+            correctAnswer: q.options[0]?.text || "Review topic for answer"
         }));
     } catch (error) {
         return [];

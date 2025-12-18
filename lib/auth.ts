@@ -1,6 +1,6 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
@@ -69,5 +69,6 @@ export const authOptions: NextAuthOptions = {
             }
             return token;
         }
-    }
+    },
+    secret: process.env.NEXTAUTH_SECRET || "secret",
 };
