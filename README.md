@@ -62,7 +62,7 @@ It serves as a centralized hub for learners to access educational content, take 
 
 ## 🧪 Testing
 
-We ensure robustness and reliability through a comprehensive automated testing suite.
+We ensure robustness and reliability through a comprehensive automated testing suite accross our system.
 
 | Type | Library | Purpose |
 | :--- | :--- | :--- |
