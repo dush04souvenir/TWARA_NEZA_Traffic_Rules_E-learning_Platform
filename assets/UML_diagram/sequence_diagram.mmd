@@ -1,0 +1,27 @@
+sequenceDiagram
+    actor User as Learner
+    participant Landing as Landing Page
+    participant Auth as Auth System
+    participant Dashboard as Dashboard Layout
+    participant Content as Dashboard Content
+    participant DB as Database/API
+
+    User->>Landing: Visits Homepage
+    Landing->>User: Display Hero, Features, How-It-Works
+    User->>Landing: Clicks "Get Started" / "Login"
+    Landing->>Auth: Open Login Modal
+    User->>Auth: Enters Credentials
+    Auth->>DB: Validate User
+    DB-->>Auth: User Verified
+    Auth-->>User: Auth Token
+    Auth->>Dashboard: Redirect to /learner-dashboard
+    Dashboard->>Content: Render LearnerDashboardContent
+    Content->>DB: Fetch Progress/Stats
+    DB-->>Content: Return Data
+    Content-->>User: Display Monitoring Dashboard
+    
+    par Parallel Actions
+        User->>Content: View Progress Cards
+        User->>Content: Click Quick Actions (Practice)
+        User->>Content: Check Recent Activity
+    end

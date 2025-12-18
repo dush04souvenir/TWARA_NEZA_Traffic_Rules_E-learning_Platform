@@ -1,0 +1,37 @@
+activityDiagram
+    start
+    :Open Application;
+    if (Is Logged In?) then (yes)
+        :Redirect to Dashboard;
+    else (no)
+        :View Landing Page;
+        :Click Login/Register;
+        :Authenticate;
+        if (Auth Success?) then (yes)
+            :Redirect to Dashboard;
+        else (no)
+            :Show Error;
+            stop
+        endif
+    endif
+
+    partition "Learner Dashboard" {
+        :Load Dashboard Data;
+        split
+            :View Progress Overview;
+        split again
+            :Access Quick Actions;
+            if (Select Action) then
+                :Start Practice Quiz;
+            else if (Select Track) then
+                :View Detailed Stats;
+            else if (Select Simulate) then
+                :Start Mock Exam;
+            endif
+        split again
+            :View Recent Activity;
+        end split
+    }
+    
+    :Logout;
+    stop
